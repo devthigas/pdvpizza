@@ -22,7 +22,6 @@ class CustomersController < ApplicationController
     respond_to do |format|
       if @customer.save
         format.html { redirect_to customers_path, notice: "Cliente cadastrado com sucesso!" }
-        format.turbo_stream
       else
         format.html { render :new, status: :unprocessable_entity }
       end
@@ -33,7 +32,6 @@ class CustomersController < ApplicationController
     respond_to do |format|
       if @customer.update(customer_params)
         format.html { redirect_to customers_path, notice: "Cliente atualizado com sucesso!" }
-        format.turbo_stream
       else
         format.html { render :edit, status: :unprocessable_entity }
       end
@@ -44,7 +42,6 @@ class CustomersController < ApplicationController
     if @customer.destroy
       respond_to do |format|
         format.html { redirect_to customers_path, notice: "Cliente excluído com sucesso!" }
-        format.turbo_stream
       end
     else
       redirect_to customers_path, alert: @customer.errors.full_messages.to_sentence
