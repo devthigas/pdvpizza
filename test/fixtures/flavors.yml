@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: Calabresa
+  description: Clássica calabresa com cebola
+  ingredients: Molho de tomate, mussarela, calabresa, cebola, orégano
+  active: true
+
+two:
+  name: Margherita
+  description: Tradicional margherita
+  ingredients: Molho de tomate, mussarela, tomate fresco, manjericão, orégano
+  active: true

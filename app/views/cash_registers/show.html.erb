@@ -1,0 +1,116 @@
+<% content_for :title, "🏪 Resumo do Caixa ##{@cash_register.id}" %>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  <!-- Informações Gerais e Fechamento -->
+  <div class="space-y-6">
+    <!-- Card Status do Caixa -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-lg space-y-4">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-4">
+        <div>
+          <h3 class="text-base font-bold text-white">Status do Caixa</h3>
+          <p class="text-xs text-zinc-500 mt-0.5">Operador: <%= @cash_register.user.name %></p>
+        </div>
+        <span class="px-3 py-1.5 rounded-full text-xs font-bold <%= @cash_register.open? ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-800 text-zinc-500' %>">
+          <%= @cash_register.status.upcase %>
+        </span>
+      </div>
+
+      <div class="text-xs text-zinc-400 space-y-2.5">
+        <div class="flex justify-between">
+          <span>Abertura:</span>
+          <span class="font-bold text-zinc-200"><%= @cash_register.opened_at.strftime("%d/%m/%Y %H:%M") %></span>
+        </div>
+        <% unless @cash_register.open? %>
+          <div class="flex justify-between">
+            <span>Fechamento:</span>
+            <span class="font-bold text-zinc-200"><%= @cash_register.closed_at.strftime("%d/%m/%Y %H:%M") %></span>
+          </div>
+        <% end %>
+        <div class="flex justify-between border-t border-zinc-850 pt-2.5">
+          <span>Fundo de Troco (Inicial):</span>
+          <span class="font-bold text-zinc-200">R$ <%= '%.2f' % @cash_register.opening_balance %></span>
+        </div>
+        <div class="flex justify-between">
+          <span>Faturamento de Vendas:</span>
+          <span class="font-bold text-emerald-400">R$ <%= '%.2f' % @cash_register.total_sales %></span>
+        </div>
+        <div class="flex justify-between text-sm font-extrabold text-white pt-2.5 border-t border-dashed border-zinc-800">
+          <span>Total Calculado:</span>
+          <span class="text-orange-400">R$ <%= '%.2f' % (@cash_register.opening_balance + @cash_register.total_sales) %></span>
+        </div>
+        
+        <% unless @cash_register.open? %>
+          <div class="flex justify-between border-t border-zinc-850 pt-2.5">
+            <span>Saldo Informado (Físico):</span>
+            <span class="font-bold text-zinc-200">R$ <%= '%.2f' % @cash_register.closing_balance %></span>
+          </div>
+          <div class="flex justify-between text-sm font-bold pt-2.5 border-t border-zinc-850 <%= @cash_register.balance_difference.to_f < 0 ? 'text-red-400' : 'text-emerald-400' %>">
+            <span>Diferença (Quebra/Sobra):</span>
+            <span>R$ <%= '%.2f' % @cash_register.balance_difference %></span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Formulário de Fechamento de Caixa -->
+    <% if @cash_register.open? %>
+      <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-lg">
+        <h3 class="text-base font-bold text-white mb-4">🔒 Fechar Caixa</h3>
+        <p class="text-xs text-zinc-500 mb-6">Conte o dinheiro físico e valores na gaveta e informe abaixo para fechar o caixa.</p>
+        
+        <%= form_with url: close_cash_register_path(@cash_register), method: :patch, class: "space-y-4" do |f| %>
+          <div>
+            <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Saldo Final Físico</label>
+            <div class="relative flex items-center">
+              <span class="absolute left-4 text-sm text-zinc-400 font-bold">R$</span>
+              <input type="number" name="closing_balance" step="0.01" placeholder="0.00" required class="block w-full rounded-2xl bg-zinc-950 border border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-zinc-100 placeholder-zinc-700 pl-10 pr-4 py-3.5 focus:outline-none">
+            </div>
+          </div>
+          <%= f.submit "Confirmar Fechamento", class: "w-full rounded-2xl py-4 bg-red-500 hover:bg-red-600 text-white font-extrabold text-xs tracking-wide transition-colors cursor-pointer shadow-lg shadow-red-500/10" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Resumo Financeiro de Vendas por Meio de Pagamento e Lista de Pedidos -->
+  <div class="lg:col-span-2 space-y-6">
+    <!-- Totais por Forma de Pagamento -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-lg">
+      <h3 class="text-lg font-bold text-white mb-6">Faturamento por Forma de Pagamento</h3>
+      
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <% Payment.payment_methods.keys.each do |method| %>
+          <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-4">
+            <span class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block mb-1"><%= method.titleize %></span>
+            <span class="text-base font-bold text-white">R$ <%= '%.2f' % (@payment_totals[Payment.payment_methods[method]].to_f) %></span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Pedidos Realizados neste Caixa -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-lg">
+      <h3 class="text-lg font-bold text-white mb-6">Pedidos Registrados</h3>
+      
+      <% if @orders.any? %>
+        <div class="divide-y divide-zinc-800">
+          <% @orders.each do |order| %>
+            <div class="py-4 flex items-center justify-between first:pt-0 last:pb-0">
+              <div>
+                <span class="text-sm font-bold text-white"><%= order.number %></span>
+                <span class="ml-2 text-xs text-zinc-500 font-semibold">(<%= order.order_type.titleize %>)</span>
+                <div class="text-[10px] text-zinc-500 mt-0.5"><%= order.created_at.strftime("%H:%M") %> • <%= order.order_items.count %> itens</div>
+              </div>
+              <div class="text-right">
+                <span class="text-sm font-extrabold text-white">R$ <%= '%.2f' % order.total %></span>
+                <div class="text-[10px] text-zinc-500 font-medium mt-0.5"><%= order.status.titleize %></div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="text-sm text-zinc-500 text-center py-8">Nenhum pedido registrado neste caixa ainda.</p>
+      <% end %>
+    </div>
+  </div>
+</div>

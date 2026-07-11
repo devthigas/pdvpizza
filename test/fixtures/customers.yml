@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: Cliente Um
+  cpf_cnpj: "12345678901"
+  phone: "11999991111"
+  address: "Rua das Flores, 123"
+  neighborhood: "Centro"
+  reference_point: "Ao lado da Farmácia"
+  notes: "Cliente VIP"
+
+two:
+  name: Cliente Dois
+  cpf_cnpj: "98765432109"
+  phone: "11999992222"
+  address: "Av. Principal, 456"
+  neighborhood: "Jardins"
+  reference_point: "Em frente ao Mercado"
+  notes: ""

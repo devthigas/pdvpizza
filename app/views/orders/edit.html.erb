@@ -1,0 +1,358 @@
+<% content_for :title, "🛍️ Ponto de Venda - Pedido #{@order.number}" %>
+
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[calc(100vh-10rem)]">
+  <!-- Coluna da Esquerda: Cardápio e Montagem (7 colunas) -->
+  <div class="lg:col-span-7 flex flex-col space-y-6 h-full min-h-0">
+    
+    <!-- Seletor de Categoria / Abas -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-4 shrink-0 shadow-md">
+      <div class="flex space-x-2 overflow-x-auto pb-1">
+        <button type="button" onclick="switchCategoryTab('pizza-tab')" id="pizza-tab-btn" class="category-tab-btn px-5 py-3 rounded-2xl bg-orange-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-orange-500/20 transition-all shrink-0">
+          🍕 Montar Pizza
+        </button>
+        <% @categories.each do |cat| %>
+          <% next if cat.name == "Pizzas" %>
+          <button type="button" onclick="switchCategoryTab('cat-<%= cat.id %>-tab')" id="cat-<%= cat.id %>-tab-btn" class="category-tab-btn px-5 py-3 rounded-2xl bg-zinc-950 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 font-bold text-sm tracking-wide transition-all shrink-0">
+            <%= cat.name %>
+          </button>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Conteúdo do Cardápio (Scrollable) -->
+    <div class="flex-1 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-md overflow-y-auto min-h-0">
+      
+      <!-- Aba Montagem de Pizza -->
+      <div id="pizza-tab-content" class="category-tab-content space-y-6">
+        <h3 class="text-base font-bold text-white uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">🍕 Montar Pizza Salgada ou Doce</h3>
+        
+        <%= form_with url: order_order_items_path(@order), method: :post, class: "space-y-6", data: { controller: "pizza-builder" } do |form| %>
+          <!-- Escolha a Categoria da Pizza (Salgada ou Doce) -->
+          <div class="grid grid-cols-2 gap-4">
+            <% pizza_products = Product.pizzas.active %>
+            <% pizza_products.each_with_index do |pizza_prod, index| %>
+              <label class="relative flex flex-col p-4 bg-zinc-950 border border-zinc-800 rounded-2xl cursor-pointer hover:border-orange-500/50 transition-all select-none">
+                <input type="radio" name="product_id" value="<%= pizza_prod.id %>" <%= "checked" if index == 0 %> 
+                       data-action="change->pizza-builder#changeProduct"
+                       data-sizes="<%= pizza_prod.product_sizes.map { |ps| { id: ps.id, size_name: ps.size_name, price: ps.price.to_f, max_flavors: ps.max_flavors } }.to_json %>"
+                       class="absolute top-4 right-4 text-orange-500 focus:ring-0">
+                <span class="text-sm font-bold text-white"><%= pizza_prod.name %></span>
+                <span class="text-xs text-zinc-500 mt-1"><%= pizza_prod.description %></span>
+              </label>
+            <% end %>
+          </div>
+
+          <!-- Tamanho da Pizza (Carregado dinamicamente via Stimulus ou estático) -->
+          <div>
+            <span class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">1. Escolha o Tamanho</span>
+            <div id="pizza-sizes-container" class="grid grid-cols-4 gap-3">
+              <!-- Tamanhos inseridos via javascript/Stimulus ou gerados inicialmente -->
+              <% if pizza_products.any? %>
+                <% pizza_products.first.product_sizes.each_with_index do |size, idx| %>
+                  <label class="relative flex flex-col items-center justify-center p-3 bg-zinc-950 border border-zinc-800 rounded-xl cursor-pointer text-center hover:border-orange-500 transition-all select-none">
+                    <input type="radio" name="product_size_id" value="<%= size.id %>" <%= "checked" if idx == 0 %>
+                           data-action="change->pizza-builder#changeSize"
+                           data-max-flavors="<%= size.max_flavors %>"
+                           data-price="<%= size.price.to_f %>"
+                           class="sr-only">
+                    <span class="text-lg font-bold text-white"><%= size.size_name %></span>
+                    <span class="text-xs text-orange-400 font-extrabold mt-1">R$ <%= '%.2f' % size.price %></span>
+                    <span class="text-[9px] text-zinc-500 mt-0.5"><%= size.max_flavors %> sabor(es)</span>
+                  </label>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- Seleção de Sabores -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Sabor 1 -->
+            <div>
+              <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Sabor 1</label>
+              <select name="flavor_ids[]" required class="block w-full rounded-xl bg-zinc-950 border border-zinc-800 focus:border-orange-500 text-sm text-zinc-200 px-3.5 py-3 focus:outline-none">
+                <option value="">Selecione o sabor...</option>
+                <% @flavors.each do |flavor| %>
+                  <option value="<%= flavor.id %>"><%= flavor.name %> (<%= flavor.description %>)</option>
+                <% end %>
+              </select>
+            </div>
+            
+            <!-- Sabor 2 (Habilitado se max_flavors > 1) -->
+            <div id="sabor-2-container">
+              <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Sabor 2 (Meia-a-Meia)</label>
+              <select name="flavor_ids[]" id="sabor-2-select" class="block w-full rounded-xl bg-zinc-950 border border-zinc-800 focus:border-orange-500 text-sm text-zinc-200 px-3.5 py-3 focus:outline-none">
+                <option value="">Nenhum (Inteira)</option>
+                <% @flavors.each do |flavor| %>
+                  <option value="<%= flavor.id %>"><%= flavor.name %></option>
+                <% end %>
+              </select>
+            </div>
+          </div>
+
+          <!-- Adicionais (Bordas, etc.) -->
+          <div>
+            <span class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">2. Adicionais Opcionais</span>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <% @additionals.each do |add| %>
+                <label class="relative flex items-center p-3 bg-zinc-950 border border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-700 select-none">
+                  <input type="checkbox" name="additional_ids[]" value="<%= add.id %>" class="text-orange-500 rounded focus:ring-0 mr-3">
+                  <div class="text-xs">
+                    <div class="font-bold text-zinc-200"><%= add.name %></div>
+                    <div class="text-orange-400 font-semibold mt-0.5">+ R$ <%= '%.2f' % add.price %></div>
+                  </div>
+                </label>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- Quantidade e Observações -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end border-t border-zinc-800 pt-5">
+            <div class="md:col-span-1">
+              <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Quantidade</label>
+              <input type="number" name="quantity" value="1" min="1" required class="block w-full rounded-xl bg-zinc-950 border border-zinc-800 focus:border-orange-500 text-sm text-zinc-200 px-3.5 py-3 focus:outline-none">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Observações (ex: sem cebola)</label>
+              <input type="text" name="observation" placeholder="ex: sem cebola, bem passada..." class="block w-full rounded-xl bg-zinc-950 border border-zinc-800 focus:border-orange-500 text-sm text-zinc-200 px-3.5 py-3 focus:outline-none">
+            </div>
+            <div class="md:col-span-1">
+              <%= form.submit "+ Adicionar", class: "w-full rounded-xl py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition-all cursor-pointer shadow-md shadow-orange-500/10 active:scale-[0.98]" %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Abas de Bebidas, Sobremesas, etc. -->
+      <% @categories.each do |cat| %>
+        <% next if cat.name == "Pizzas" %>
+        <div id="cat-<%= cat.id %>-tab-content" class="category-tab-content space-y-4 hidden">
+          <h3 class="text-base font-bold text-white uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">🥤 <%= cat.name %></h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <% cat.products.active.each do |prod| %>
+              <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 flex items-center justify-between shadow-md">
+                <div>
+                  <div class="font-bold text-white"><%= prod.name %></div>
+                  <div class="text-xs text-zinc-500 mt-1"><%= prod.description %></div>
+                  <div class="text-sm font-extrabold text-orange-400 mt-2">R$ <%= '%.2f' % prod.base_price %></div>
+                </div>
+                
+                <%= form_with url: order_order_items_path(@order), method: :post, class: "flex items-center space-x-2" do |form| %>
+                  <input type="hidden" name="product_id" value="<%= prod.id %>">
+                  <input type="number" name="quantity" value="1" min="1" class="w-14 rounded-xl bg-zinc-900 border border-zinc-800 text-center text-sm text-zinc-200 px-2 py-2 focus:outline-none">
+                  <%= form.submit "🛒 +", class: "px-3.5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs transition-all cursor-pointer" %>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+    </div>
+  </div>
+
+  <!-- Coluna da Direita: Resumo do Pedido e Pagamento (5 colunas) -->
+  <div class="lg:col-span-5 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-md flex flex-col justify-between h-full min-h-0">
+    
+    <!-- Configurações do Pedido (Cabeçalho do Resumo) -->
+    <div class="shrink-0">
+      <%= form_with model: @order, class: "space-y-4 border-b border-zinc-800 pb-4 mb-4" do |f| %>
+        <!-- Tipo de Pedido (Balcão, Mesa, Delivery) -->
+        <div>
+          <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Tipo de Atendimento</label>
+          <div class="grid grid-cols-3 gap-2">
+            <% Order.order_types.keys.each do |type| %>
+              <label class="flex items-center justify-center p-2 rounded-xl border text-xs font-bold cursor-pointer select-none transition-all
+                <%= @order.order_type == type ? 'bg-orange-500 text-white border-orange-500' : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-800' %>">
+                <%= f.radio_button :order_type, type, class: "sr-only", onchange: "this.form.requestSubmit();" %>
+                <%= type.titleize %>
+              </label>
+            <% end %>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Campo Mesa (se for mesa) -->
+          <% if @order.mesa? %>
+            <div>
+              <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">🪑 Mesa</label>
+              <%= f.collection_select :dining_table_id, @dining_tables, :id, :number, { prompt: "Selecione..." }, { class: "block w-full rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-200 px-3 py-2.5 focus:outline-none", onchange: "this.form.requestSubmit();" } %>
+            </div>
+          <% end %>
+
+          <!-- Campo Cliente (opcional/obrigatório se delivery) -->
+          <div>
+            <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">👤 Cliente</label>
+            <%= f.collection_select :customer_id, Customer.all, :id, :name, { prompt: "Selecione..." }, { class: "block w-full rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-200 px-3 py-2.5 focus:outline-none", onchange: "this.form.requestSubmit();" } %>
+          </div>
+        </div>
+
+        <!-- Se for Delivery, mostra Taxa de Entrega e Endereço -->
+        <% if @order.delivery? %>
+          <div class="grid grid-cols-3 gap-3 items-end">
+            <div class="col-span-1">
+              <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">🏍️ Taxa</label>
+              <%= f.number_field :delivery_fee, step: 0.5, class: "block w-full rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-200 px-3 py-2.5 focus:outline-none", onchange: "this.form.requestSubmit();" %>
+            </div>
+            <div class="col-span-2">
+              <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Endereço de Entrega</label>
+              <%= f.text_field :delivery_address, placeholder: "Endereço completo", class: "block w-full rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-200 px-3 py-2.5 focus:outline-none", onchange: "this.form.requestSubmit();" %>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+
+    <!-- Lista de Itens Atuais (Scrollable) -->
+    <div class="flex-1 overflow-y-auto space-y-3 mb-4 pr-2 min-h-0">
+      <% if @order_items.any? %>
+        <% @order_items.each do |item| %>
+          <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+            <div class="flex-1 pr-3">
+              <div class="text-sm font-bold text-white"><%= item.description %></div>
+              
+              <!-- Se tiver adicionais -->
+              <% if item.additionals.any? %>
+                <div class="text-xs text-zinc-500 mt-1">
+                  + Adicionais: <%= item.additionals.pluck(:name).join(", ") %>
+                </div>
+              <% end %>
+
+              <!-- Se tiver observação -->
+              <% if item.observation.present? %>
+                <div class="text-xs text-amber-500 font-semibold mt-1">Obs: <%= item.observation %></div>
+              <% end %>
+
+              <div class="text-xs text-zinc-400 mt-2 flex items-center">
+                <span class="font-extrabold text-orange-500 mr-2"><%= item.quantity.to_i %>x</span>
+                <span>R$ <%= '%.2f' % item.unit_price %></span>
+                <% if item.discount > 0 %>
+                  <span class="ml-2 text-red-400 font-semibold">- R$ <%= '%.2f' % item.discount %></span>
+                <% end %>
+              </div>
+            </div>
+
+            <!-- Preço final do item e botão excluir -->
+            <div class="flex items-center space-x-3 text-right">
+              <div class="text-sm font-extrabold text-white">R$ <%= '%.2f' % item.total %></div>
+              <%= button_to order_order_item_path(@order, item), method: :delete, class: "p-2 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white transition-colors cursor-pointer" do %>
+                🗑️
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      <% else %>
+        <p class="text-sm text-zinc-500 text-center py-12">Nenhum item no pedido.</p>
+      <% end %>
+    </div>
+
+    <!-- Resumo de Totais e Pagamento (Rodapé) -->
+    <div class="shrink-0 border-t border-zinc-800 pt-4 space-y-4">
+      <!-- Resumo Financeiro -->
+      <div class="space-y-1.5 text-xs text-zinc-400">
+        <div class="flex justify-between">
+          <span>Subtotal:</span>
+          <span>R$ <%= '%.2f' % @order.subtotal %></span>
+        </div>
+        <% if @order.delivery? %>
+          <div class="flex justify-between">
+            <span>Taxa de Entrega:</span>
+            <span>R$ <%= '%.2f' % @order.delivery_fee %></span>
+          </div>
+        <% end %>
+        <div class="flex justify-between">
+          <span>Desconto:</span>
+          <span class="text-red-400">- R$ <%= '%.2f' % @order.discount %></span>
+        </div>
+        <div class="flex justify-between text-base font-extrabold text-white pt-1.5 border-t border-dashed border-zinc-800">
+          <span>Total Geral:</span>
+          <span class="text-orange-400">R$ <%= '%.2f' % @order.total %></span>
+        </div>
+      </div>
+
+      <!-- Registrar Pagamento (se não estiver pago completo) -->
+      <% unless @order.fully_paid? %>
+        <%= form_with url: order_payments_path(@order), method: :post, class: "bg-zinc-950 border border-zinc-800 rounded-2xl p-3.5 space-y-3" do |f| %>
+          <div class="text-xs font-bold text-white mb-1">💳 Registrar Recebimento (Falta R$ <%= '%.2f' % @order.remaining_amount %>)</div>
+          <div class="grid grid-cols-2 gap-2">
+            <select name="payment[payment_method]" class="block w-full rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 px-3 py-2.5 focus:outline-none">
+              <% Payment.payment_methods.keys.each do |method| %>
+                <option value="<%= method %>"><%= method.titleize %></option>
+              <% end %>
+            </select>
+            <div class="relative flex items-center">
+              <span class="absolute left-3 text-xs text-zinc-500 font-bold">R$</span>
+              <input type="number" name="payment[amount]" step="0.01" value="<%= @order.remaining_amount.to_f %>" class="block w-full rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 pl-8 pr-3 py-2.5 focus:outline-none">
+            </div>
+          </div>
+          <%= f.submit "Adicionar Pagamento", class: "w-full rounded-xl py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition-colors cursor-pointer" %>
+        <% end %>
+      <% else %>
+        <!-- Pagos listagem -->
+        <div class="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-4 flex items-center justify-between">
+          <div class="flex items-center">
+            <span class="text-lg mr-2">✅</span>
+            <div>
+              <p class="text-xs font-bold text-emerald-400">Pagamento Pago Concluído</p>
+              <p class="text-[10px] text-zinc-500">Valor Recebido: R$ <%= '%.2f' % @order.total_paid %></p>
+            </div>
+          </div>
+          <% if @order.total_paid > @order.total %>
+            <div class="text-right">
+              <p class="text-[10px] text-zinc-500">Troco Calculado:</p>
+              <p class="text-sm font-extrabold text-emerald-400">R$ <%= '%.2f' % (@order.total_paid - @order.total) %></p>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <!-- Botões de Ações Finais (Cancelar, Fila Cozinha, Fechar Venda) -->
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <!-- Cancelar ou Descartar Rascunho -->
+        <%= button_to order_path(@order), method: :delete, class: "w-full rounded-2xl py-3.5 bg-zinc-950 border border-zinc-800 hover:bg-red-500/10 text-zinc-400 hover:text-red-400 font-bold text-xs transition-all cursor-pointer" do %>
+          ❌ Descartar
+        <% end %>
+
+        <!-- Ação Concluir / Cozinha -->
+        <% if @order.fully_paid? %>
+          <%= button_to complete_order_path(@order), method: :patch, class: "w-full rounded-2xl py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs transition-all cursor-pointer shadow-lg shadow-emerald-500/20 active:scale-[0.98]" do %>
+            🚀 Concluir Venda
+          <% end %>
+        <% else %>
+          <%= button_to send_to_kitchen_order_path(@order), method: :patch, class: "w-full rounded-2xl py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-xs transition-all cursor-pointer shadow-lg shadow-orange-500/20 active:scale-[0.98]" do %>
+            🍳 Enviar Cozinha
+          <% end %>
+        <% end %>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Simple Tab Switcher for categories
+  function switchCategoryTab(tabId) {
+    // Hide all contents
+    const contents = document.querySelectorAll('.category-tab-content');
+    contents.forEach(c => c.classList.add('hidden'));
+
+    // Show active content
+    const activeContent = document.getElementById(tabId + '-content');
+    if(activeContent) activeContent.classList.remove('hidden');
+
+    // Reset tabs classes
+    const buttons = document.querySelectorAll('.category-tab-btn');
+    buttons.forEach(b => {
+      b.classList.remove('bg-orange-500', 'text-white', 'shadow-lg', 'shadow-orange-500/20');
+      b.classList.add('bg-zinc-950', 'border-zinc-800', 'text-zinc-400', 'hover:text-zinc-200');
+    });
+
+    // Set active class to clicked button
+    const activeBtn = document.getElementById(tabId + '-btn');
+    if(activeBtn) {
+      activeBtn.classList.remove('bg-zinc-950', 'border-zinc-800', 'text-zinc-400');
+      activeBtn.classList.add('bg-orange-500', 'text-white', 'shadow-lg', 'shadow-orange-500/20');
+    }
+  }
+</script>

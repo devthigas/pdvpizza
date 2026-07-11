@@ -1,0 +1,29 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  category: one
+  name: Coca Cola 2L
+  description: Refrigerante Coca Cola 2 Litros
+  barcode: "789123456001"
+  sku: "COCA-2L"
+  is_pizza: false
+  base_price: 9.00
+  cost_price: 5.00
+  current_stock: 50.00
+  unit: "un"
+  min_stock: 10.00
+  active: true
+
+two:
+  category: two
+  name: Guaraná Antarctica 2L
+  description: Refrigerante Guaraná 2 Litros
+  barcode: "789123456002"
+  sku: "GUAR-2L"
+  is_pizza: false
+  base_price: 8.00
+  cost_price: 4.50
+  current_stock: 40.00
+  unit: "un"
+  min_stock: 10.00
+  active: true

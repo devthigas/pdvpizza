@@ -1,0 +1,109 @@
+<% content_for :title, "📋 Histórico de Pedidos e Entregas" %>
+
+<div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-lg">
+  <div class="flex items-center justify-between mb-8">
+    <h3 class="text-lg font-bold text-white">Todos os Pedidos</h3>
+    <%= link_to new_order_path, class: "px-5 py-3 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm tracking-wide transition-all shadow-lg shadow-orange-500/20 active:scale-[0.98]" do %>
+      🍕 Novo Pedido
+    <% end %>
+  </div>
+
+  <% if @orders.any? %>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse text-sm text-zinc-300">
+        <thead>
+          <tr class="border-b border-zinc-800 text-zinc-500 font-semibold">
+            <th class="py-4 px-3">Pedido</th>
+            <th class="py-4 px-3">Tipo</th>
+            <th class="py-4 px-3">Cliente / Mesa</th>
+            <th class="py-4 px-3">Status</th>
+            <th class="py-4 px-3 text-right">Valor Total</th>
+            <th class="py-4 px-3 text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-zinc-800">
+          <% @orders.each do |order| %>
+            <tr class="hover:bg-zinc-950/40 transition-colors">
+              <td class="py-4 px-3 font-bold text-white">
+                <%= link_to order.number, order.pending? ? edit_order_path(order) : order_path(order), class: "hover:underline text-orange-400" %>
+                <div class="text-[10px] text-zinc-500 font-medium mt-0.5"><%= order.created_at.strftime("%d/%m/%Y às %H:%M") %></div>
+              </td>
+              <td class="py-4 px-3">
+                <span class="px-2.5 py-1 rounded-xl text-xs font-bold bg-zinc-800 text-zinc-400">
+                  <%= order.order_type.titleize %>
+                </span>
+              </td>
+              <td class="py-4 px-3">
+                <% if order.mesa? %>
+                  🪑 Mesa <%= order.dining_table&.number %>
+                <% elsif order.delivery? %>
+                  🏍️ <%= order.customer&.name %>
+                  <div class="text-xs text-zinc-500 truncate max-w-xs mt-0.5"><%= order.delivery_address %></div>
+                <% else %>
+                  👤 <%= order.customer&.name || "Balcão" %>
+                <% end %>
+              </td>
+              <td class="py-4 px-3">
+                <span class="px-3 py-1 rounded-full text-xs font-bold
+                  <%= case order.status
+                      when 'pending' then 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      when 'in_kitchen' then 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                      when 'ready' then 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      when 'delivering' then 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                      when 'completed' then 'bg-zinc-800 text-zinc-400'
+                      when 'cancelled' then 'bg-red-500/10 text-red-400 border border-red-500/20'
+                      end %>">
+                  <%= case order.status
+                      when 'pending' then 'Pendente (Rascunho)'
+                      when 'in_kitchen' then 'Na Cozinha'
+                      when 'ready' then 'Pronto / Aguardando'
+                      when 'delivering' then 'Em Rota de Entrega'
+                      when 'completed' then 'Finalizado'
+                      when 'cancelled' then 'Cancelado'
+                      end %>
+                </span>
+              </td>
+              <td class="py-4 px-3 text-right font-extrabold text-white">
+                R$ <%= '%.2f' % order.total %>
+              </td>
+              <td class="py-4 px-3 text-center">
+                <div class="flex items-center justify-center space-x-2">
+                  <!-- Se estiver pendente, pode editar -->
+                  <% if order.pending? %>
+                    <%= link_to "Editar", edit_order_path(order), class: "px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs" %>
+                  <% else %>
+                    <%= link_to "Ver Recibo", order_path(order), class: "px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-xs" %>
+                  <% end %>
+
+                  <!-- Se estiver pronto e for delivery, permite despachar entrega -->
+                  <% if order.ready? && order.delivery? %>
+                    <%= form_with url: start_delivery_order_path(order), method: :patch, class: "inline flex items-center space-x-1" do |f| %>
+                      <select name="delivery_person_id" required class="bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 px-2 py-1 rounded-xl focus:outline-none">
+                        <% DeliveryPerson.active.each do |dp| %>
+                          <option value="<%= dp.id %>"><%= dp.name %></option>
+                        <% end %>
+                      </select>
+                      <%= f.submit "Despachar", class: "px-3 py-1.5 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold text-xs cursor-pointer" %>
+                    <% end %>
+                  <% end %>
+
+                  <!-- Se estiver entregando, permite concluir ao receber retorno -->
+                  <% if order.delivering? %>
+                    <%= button_to "Entregue (Concluir)", complete_order_path(order), method: :patch, class: "px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs cursor-pointer" %>
+                  <% end %>
+
+                  <!-- Permitir cancelamento se não concluído/cancelado -->
+                  <% unless order.completed? || order.cancelled? || order.pending? %>
+                    <%= button_to "Cancelar", cancel_order_path(order), method: :patch, data: { confirm: "Tem certeza?" }, class: "px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white font-bold text-xs cursor-pointer" %>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="text-sm text-zinc-500 text-center py-12">Nenhum pedido cadastrado ainda.</p>
+  <% end %>
+</div>

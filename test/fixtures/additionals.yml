@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: Borda de Catupiry
+  description: Borda recheada com catupiry original
+  price: 8.00
+  active: true
+
+two:
+  name: Bacon Extra
+  description: Bacon em cubos crocantes
+  price: 5.00
+  active: true
