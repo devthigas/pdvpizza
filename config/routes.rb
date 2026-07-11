@@ -8,12 +8,19 @@ Rails.application.routes.draw do
   resources :categories
   resources :products do
     resources :stock_movements, only: [:index, :new, :create]
+    collection do
+      get :search
+    end
   end
   resources :flavors
   resources :additionals
 
   # Operação
-  resources :customers
+  resources :customers do
+    collection do
+      get :search
+    end
+  end
   resources :dining_tables
   resources :delivery_persons
 
@@ -38,10 +45,6 @@ Rails.application.routes.draw do
 
   # Cozinha
   get "kitchen", to: "kitchen#index", as: :kitchen
-
-  # Busca (AJAX)
-  get "products/search", to: "products#search", as: :search_products
-  get "customers/search", to: "customers#search", as: :search_customers
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   get "up" => "rails/health#show", as: :rails_health_check

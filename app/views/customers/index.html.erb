@@ -1,0 +1,18 @@
+<% content_for :title, "👥 Cadastro de Clientes" %>
+
+<div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-lg">
+  <div class="flex items-center justify-between mb-8">
+    <h3 class="text-lg font-bold text-white">Todos os Clientes</h3>
+    <%= link_to "Novo Cliente", new_customer_path, class: "px-5 py-3 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm tracking-wide transition-all shadow-lg shadow-orange-500/20 active:scale-[0.98]" %>
+  </div>
+
+  <!-- Barra de Busca Rápida -->
+  <div class="mb-6">
+    <%= form_with url: search_customers_path, method: :get, data: { turbo_frame: "customers_list" }, class: "relative flex items-center" do |f| %>
+      <span class="absolute left-4 text-zinc-500">🔍</span>
+      <%= f.text_field :q, placeholder: "Buscar cliente por nome, telefone ou CPF/CNPJ...", class: "block w-full rounded-2xl bg-zinc-950 border border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-zinc-100 placeholder-zinc-700 pl-12 pr-4 py-3.5 focus:outline-none text-sm", oninput: "this.form.requestSubmit()" %>
+    <% end %>
+  </div>
+
+  <%= render "customers/search_results", customers: @customers %>
+</div>

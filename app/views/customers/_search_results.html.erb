@@ -1,0 +1,49 @@
+<%= turbo_frame_tag "customers_list" do %>
+  <% if customers.any? %>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse text-sm text-zinc-300">
+        <thead>
+          <tr class="border-b border-zinc-800 text-zinc-500 font-semibold">
+            <th class="py-4 px-3">Nome</th>
+            <th class="py-4 px-3">Telefone</th>
+            <th class="py-4 px-3">CPF/CNPJ</th>
+            <th class="py-4 px-3">Endereço Completo</th>
+            <th class="py-4 px-3 text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-zinc-800">
+          <% customers.each do |customer| %>
+            <tr class="hover:bg-zinc-950/40 transition-colors">
+              <td class="py-4 px-3">
+                <span class="font-bold text-white"><%= customer.name %></span>
+                <% if customer.notes.present? %>
+                  <div class="text-xs text-zinc-500 mt-0.5 max-w-xs truncate" title="<%= customer.notes %>">
+                    <%= customer.notes %>
+                  </div>
+                <% end %>
+              </td>
+              <td class="py-4 px-3 font-medium text-zinc-300">
+                <%= customer.phone %>
+              </td>
+              <td class="py-4 px-3 text-xs text-zinc-400">
+                <%= customer.cpf_cnpj.present? ? customer.cpf_cnpj : "-" %>
+              </td>
+              <td class="py-4 px-3 text-zinc-400">
+                <%= customer.full_address.present? ? customer.full_address : "-" %>
+              </td>
+              <td class="py-4 px-3 text-center">
+                <div class="flex items-center justify-center space-x-2">
+                  <%= link_to "Visualizar", customer_path(customer), data: { turbo: false }, class: "px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-xs" %>
+                  <%= link_to "Editar", edit_customer_path(customer), data: { turbo: false }, class: "px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-750 text-zinc-300 font-bold text-xs" %>
+                  <%= button_to "Excluir", customer_path(customer), method: :delete, data: { confirm: "Tem certeza que deseja excluir este cliente?", turbo_confirm: "Tem certeza que deseja excluir este cliente?" }, class: "px-3 py-1.5 rounded-xl bg-red-950 hover:bg-red-900 text-red-400 hover:text-red-300 font-bold text-xs cursor-pointer" %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="text-sm text-zinc-500 text-center py-12">Nenhum cliente encontrado.</p>
+  <% end %>
+<% end %>

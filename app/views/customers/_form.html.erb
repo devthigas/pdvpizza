@@ -1,0 +1,63 @@
+<%= form_with model: customer, class: "space-y-6" do |form| %>
+  <% if customer.errors.any? %>
+    <div class="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+      <div class="font-bold mb-2">
+        <%= pluralize(customer.errors.count, "erro impediu", "erros impediram") %> que este cliente fosse salvo:
+      </div>
+      <ul class="list-disc pl-5 space-y-1">
+        <% customer.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Nome -->
+    <div class="md:col-span-2">
+      <%= form.label :name, "Nome Completo", class: "block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2" %>
+      <%= form.text_field :name, placeholder: "Ex: Thigas Dev", required: true, class: "block w-full rounded-2xl bg-zinc-950 border #{customer.errors[:name].any? ? 'border-red-500/50 focus:ring-red-500' : 'border-zinc-800 focus:border-orange-500 focus:ring-orange-500'} text-zinc-100 placeholder-zinc-700 px-4 py-3.5 focus:outline-none focus:ring-1" %>
+    </div>
+
+    <!-- Telefone -->
+    <div>
+      <%= form.label :phone, "Telefone", class: "block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2" %>
+      <%= form.text_field :phone, placeholder: "Ex: (11) 99999-8888", required: true, class: "block w-full rounded-2xl bg-zinc-950 border #{customer.errors[:phone].any? ? 'border-red-500/50 focus:ring-red-500' : 'border-zinc-800 focus:border-orange-500 focus:ring-orange-500'} text-zinc-100 placeholder-zinc-700 px-4 py-3.5 focus:outline-none focus:ring-1" %>
+    </div>
+
+    <!-- CPF/CNPJ -->
+    <div>
+      <%= form.label :cpf_cnpj, "CPF / CNPJ", class: "block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2" %>
+      <%= form.text_field :cpf_cnpj, placeholder: "Opcional: 000.000.000-00", class: "block w-full rounded-2xl bg-zinc-950 border #{customer.errors[:cpf_cnpj].any? ? 'border-red-500/50 focus:ring-red-500' : 'border-zinc-800 focus:border-orange-500 focus:ring-orange-500'} text-zinc-100 placeholder-zinc-700 px-4 py-3.5 focus:outline-none focus:ring-1" %>
+    </div>
+
+    <!-- Endereço -->
+    <div class="md:col-span-2">
+      <%= form.label :address, "Endereço (Rua, Número, Apto)", class: "block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2" %>
+      <%= form.text_field :address, placeholder: "Ex: Rua das Flores, 123", class: "block w-full rounded-2xl bg-zinc-950 border border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-zinc-100 placeholder-zinc-700 px-4 py-3.5 focus:outline-none" %>
+    </div>
+
+    <!-- Bairro -->
+    <div>
+      <%= form.label :neighborhood, "Bairro", class: "block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2" %>
+      <%= form.text_field :neighborhood, placeholder: "Ex: Centro", class: "block w-full rounded-2xl bg-zinc-950 border border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-zinc-100 placeholder-zinc-700 px-4 py-3.5 focus:outline-none" %>
+    </div>
+
+    <!-- Ponto de Referência -->
+    <div>
+      <%= form.label :reference_point, "Ponto de Referência", class: "block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2" %>
+      <%= form.text_field :reference_point, placeholder: "Ex: Próximo à padaria", class: "block w-full rounded-2xl bg-zinc-950 border border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-zinc-100 placeholder-zinc-700 px-4 py-3.5 focus:outline-none" %>
+    </div>
+
+    <!-- Observações -->
+    <div class="md:col-span-2">
+      <%= form.label :notes, "Observações Internas", class: "block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2" %>
+      <%= form.text_area :notes, placeholder: "Ex: Cliente prefere massa fina, restrição alimentar, campainha quebrada...", rows: 3, class: "block w-full rounded-2xl bg-zinc-950 border border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-zinc-100 placeholder-zinc-700 px-4 py-3.5 focus:outline-none" %>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-end space-x-4 pt-4 border-t border-zinc-800">
+    <%= link_to "Cancelar", customers_path, class: "px-6 py-3.5 rounded-2xl bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-400 font-bold text-sm transition-colors" %>
+    <%= form.submit "Salvar Cliente", class: "px-6 py-3.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-sm tracking-wide transition-all shadow-lg shadow-orange-500/20 cursor-pointer" %>
+  </div>
+<% end %>
